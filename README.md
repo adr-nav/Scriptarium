@@ -1,3 +1,5 @@
+🌐 Available languages: [English](README.md) | [Español](README.es.md)
+
 # Scriptarium
 
 **Scriptarium** is my personal collection of scripts focused on **system administration** and the **automation of repetitive tasks**.  
