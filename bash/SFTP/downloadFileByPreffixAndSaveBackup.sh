@@ -29,11 +29,12 @@ LS_TEMP_FILE='/tmp/sftp_file_list.txt' # Temporary file to store the list of fil
 FILE_NAME_PREFIX="" # Prefix of the file to download, e.g., "ACCESS-LOG-APACHE_"
 FILE_NAME_EXTENSION="" # File extension to search for WITH NO dot on it, e.g., "txt" and not ".txt"
 LOGFILE='' # Log file to record the script's actions
-TIMESTAMP=`date "+%d-%m-%Y %H:%M:%S"` # Feel free to change the date format as needed, this is the format used in the log file
 
 # Function to log messages to a log file 
 log_message() {
-    echo "[$TIMESTAMP] $1" >> $LOGFILE
+    local now
+    now=$(date "+%d-%m-%Y %H:%M:%S")
+    echo "[$now] $1" >> $LOGFILE
 }
 
 # function to validate that a directory exists
