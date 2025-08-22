@@ -44,7 +44,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import argparse
 
-def send_centreon_alert_email(notify_type, host_name, host_alias, host_state, host_address, host_output, recipient_email, totalup, totaldown, duration, date, time):
+def send_centreon_alert_email(notify_type, 
+    host_name, host_alias, host_state, host_address, host_output, 
+    recipient_email, totalup, totaldown, duration, date, time):
     # SMTP server configuration
     smtp_server = "smtp.office365.com"  # Replace with your SMTP server. e.g., smtp.office365.com
     smtp_port = "587"  # Replace with your SMTP port, e.g., 587 for TLS
