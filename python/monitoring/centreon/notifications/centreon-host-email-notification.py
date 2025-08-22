@@ -6,16 +6,16 @@
 # Last modified: 2025-08-22
 #
 # Script to send email alerts for Centreon host notifications
-# using an external SMTP server (e.g., Office365).
-# 
-# The script constructs an HTML email with host details and sends it via SMTP.
+# using the local MTA (sendmail in this case). Make sure your server is configured to send emails.
+# You will need to adjust the sender_email variable to match an allowed sender in your MTA configuration.
 # 
 # Requirements:
 # - Python 3
 # - smtplib and email libraries (included in standard library)
 # - argparse for command-line argument parsing
+# - A local MTA (sendmail) configured to send emails
 #
-# Modify SMTP server settings, sender email, and password before use.
+# You will need to adjust the sender_email variable to match an allowed sender in your MTA configuration.
 # 
 # You will also need to create a new Notification Command in Centreon (Configuration > Commands > Notifications)
 # with the following command line (adjust the path to this script):
@@ -39,33 +39,33 @@
 # Replace $USER1$ with the actual path to your Centreon user scripts directory in case you have changed it.
 # 
 
-import smtplib
+import argparse
+import subprocess
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import argparse
 
+# Function to send email
 def send_centreon_alert_email(notify_type, 
-    host_name, host_alias, host_state, host_address, host_output, 
-    recipient_email, totalup, totaldown, duration, date, time):
-    # SMTP server configuration
-    smtp_server = "smtp.office365.com"  # Replace with your SMTP server. e.g., smtp.office365.com
-    smtp_port = "587"  # Replace with your SMTP port, e.g., 587 for TLS
-    sender_email = ""  # Replace with your email
-    sender_password = ""  # Replace with your email password
-    url = "" # This should be the URL of your Centreon instance, will be used to link to host details in the email
-    url_image = "" # URL of the image to be included in the email, e.g., a company logo
+host_name, host_alias, host_grpalias, host_state, 
+host_address, host_output, recipient_email, 
+totalup, totaldown, duration, 
+date, time
+):
+    sender_email = f"centreon-{host_grpalias}@contoso.com"  # CHANGE THIS. Must match an allowed sender in your MTA configuration
+    url = "" # URL to your Centreon instance, e.g., "https://centreon.yourdomain.com"
+    url_image = "" # URL to your logo image
 
-    # Define color based on host state
+    # Set color based on state
     if host_state == "OK":
         color = "green"
     elif host_state == "WARNING":
         color = "orange"
-    elif host_state == "CRITICAL" or host_state == "DOWN":
+    elif host_state in ("CRITICAL", "DOWN"):
         color = "red"
     else:
-        color = "gray"  # Default color for unknown statuses
+        color = "gray"
 
-    # Email content
+    # Mail content
     subject = f"Host {host_name} status is {host_state}"
     html_content = f"""
         <html>
@@ -121,42 +121,41 @@ def send_centreon_alert_email(notify_type,
 
     # Create the email message
     message = MIMEMultipart("alternative")
-    message["Subject"] = subject # Set the email subject
-    message["From"] = sender_email # Set the sender email
-    message["To"] = recipient_email # Set the recipient email
+    message["Subject"] = subject
+    message["From"] = sender_email
+    message["To"] = recipient_email
     message.attach(MIMEText(html_content, "html"))
 
+    # Send the email using local sendmail
     try:
-        # Connect to the SMTP server and send the email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()  # Secure the connection
-            server.login(sender_email, sender_password) # Log in to the SMTP server
-            server.sendmail(sender_email, recipient_email, message.as_string()) # Send the email
-        print("Email sent successfully!")
+        process = subprocess.Popen(
+            ["/usr/sbin/sendmail", "-t", "-oi"],
+            stdin=subprocess.PIPE
+        )
+        process.communicate(message.as_string().encode('utf-8'))
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"Error sending email: {e}")
 
 if __name__ == "__main__":
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Send Centreon alert email.")
-    parser.add_argument("--notify_type", required=True, help="Notification type")
-    parser.add_argument("--host_name", required=True, help="Host name")
-    parser.add_argument("--host_alias", required=True, help="Host alias")
-    parser.add_argument("--host_state", required=True, help="Host state")
-    parser.add_argument("--host_address", required=True, help="Host address")
-    parser.add_argument("--host_output", required=True, help="Host output")
-    parser.add_argument("--recipient_email", required=True, help="Contact email")
-    parser.add_argument("--totalup", required=True, help="Total hosts up")
-    parser.add_argument("--totaldown", required=True, help="Total hosts down")
-    parser.add_argument("--duration", required=True, help="Duration of the state")
-    parser.add_argument("--date", required=True, help="Date of the alert")
-    parser.add_argument("--time", required=True, help="Time of the alert")
+    parser = argparse.ArgumentParser(description="Send Centreon host alert email without external SMTP.")
+    parser.add_argument("--notify_type", required=True)
+    parser.add_argument("--host_name", required=True)
+    parser.add_argument("--host_alias", required=True)
+    parser.add_argument("--host_grpalias", required=True)
+    parser.add_argument("--host_state", required=True)
+    parser.add_argument("--host_address", required=True)
+    parser.add_argument("--host_output", required=True)
+    parser.add_argument("--recipient_email", required=True)
+    parser.add_argument("--totalup", required=True)
+    parser.add_argument("--totaldown", required=True)
+    parser.add_argument("--duration", required=True)
+    parser.add_argument("--date", required=True)
+    parser.add_argument("--time", required=True)
 
     args = parser.parse_args()
 
-    # Call the function with parsed arguments
     send_centreon_alert_email(
-        args.notify_type, args.host_name, args.host_alias, args.host_state,
+        args.notify_type, args.host_name, args.host_alias, args.host_grpalias, args.host_state,
         args.host_address, args.host_output, args.recipient_email,
         args.totalup, args.totaldown, args.duration,
         args.date, args.time
