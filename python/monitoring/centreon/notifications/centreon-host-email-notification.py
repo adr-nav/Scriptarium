@@ -25,7 +25,7 @@
 # --notify_type: Type of notification (e.g., PROBLEM, RECOVERY)
 # --host_name: Name of the host
 # --host_alias: Alias of the host
-# --host_grpalias: Alias of the host group (In my case I use it to automatically set the client name in my ticketing system)
+# --host_grpalias: Alias of the host group (In my case I use it to automatically set the customer name in my ticketing system)
 # --host_state: Current state of the host (e.g., UP, DOWN)
 # --host_address: IP address of the host
 # --host_output: Additional information about the host state
